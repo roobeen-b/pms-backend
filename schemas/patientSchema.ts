@@ -23,6 +23,7 @@ BEGIN
         privacyConsent BIT NOT NULL,
         treatmentConsent BIT NOT NULL,
         disclosureConsent BIT NOT NULL,
+        FOREIGN KEY (userId) REFERENCES users(userId)
     )
 END
 `;

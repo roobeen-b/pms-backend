@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import { v4 as uuidv4 } from "uuid";
 import {
   createTable,
   checkRecordExists,
   insertRecord,
+  getJoinedRecords,
 } from "../utils/sqlFunctions";
 import { patientSchema } from "../schemas/patientSchema";
+import { CustomRequest } from "../custom";
 
 type Gender = "male" | "female" | "other";
 interface PatientModel {
@@ -107,6 +108,44 @@ export const registerPatientInfo = async (req: Request, res: Response) => {
         data: {
           userId: patient.userId,
         },
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message, status: 500 });
+  }
+};
+
+export const getPatientInfo = async (
+  req: CustomRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.userId;
+    const patientData = await getJoinedRecords(
+      "patients",
+      "users",
+      "userId",
+      "userId",
+      userId
+    );
+
+    let newPatientData: { [key: string]: any } = {};
+    for (const key in patientData) {
+      if (key != "password") {
+        newPatientData[key] = patientData[key];
+      }
+    }
+
+    if (newPatientData) {
+      res.status(200).json({
+        message: "Successful",
+        status: 200,
+        data: newPatientData,
+      });
+    } else {
+      res.status(200).json({
+        message: "Patient not found",
+        status: 200,
       });
     }
   } catch (error) {
