@@ -7,7 +7,7 @@ import {
   checkRecordExists,
   insertRecord,
 } from "../utils/sqlFunctions";
-import { userSchema } from "../schemas/userSchema";
+import { userSchema } from "../schemas/user.schema";
 
 interface UserModel {
   userId: string;

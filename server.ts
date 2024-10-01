@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import cors from "cors";
 import { connectDB } from "./db/db";
-import authRoutes from "./routes/authRoutes";
-import patientRoutes from "./routes/patientRoutes";
+import authRoutes from "./routes/auth.route";
+import patientRoutes from "./routes/patient.route";
 const port = process.env.PORT;
 
 const app = express();
