@@ -1,13 +1,21 @@
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
-import { userSchema } from "../schemas/userSchema";
 import bcrypt from "bcryptjs";
 import {
   createTable,
   checkRecordExists,
   insertRecord,
 } from "../utils/sqlFunctions";
+import { userSchema } from "../schemas/user.schema";
+
+interface UserModel {
+  userId: string;
+  fullname: string;
+  phone: string;
+  email: string;
+  password: string;
+}
 
 const generateAccessToken = async (userId: string): Promise<string> => {
   return jwt.sign(
@@ -21,28 +29,31 @@ const generateAccessToken = async (userId: string): Promise<string> => {
 
 export const register = async (req: Request, res: Response) => {
   const { email, password, confirmPassword, fullname, phone } = req.body;
+
   if (!email || !password || !confirmPassword) {
     res.status(400).json({
       message: "Email or Password fields cannot be empty.",
+      status: 400,
     });
     return;
   }
 
   if (!fullname || !phone) {
     res.status(400).json({
-      message: "Required fields cannot be empty.",
+      message: "Please fill all the required fields.",
+      status: 400,
     });
     return;
   }
 
   if (password !== confirmPassword) {
-    res.status(400).json({ message: "Passwords do not match" });
+    res.status(400).json({ message: "Passwords do not match", status: 400 });
     return;
   }
 
   const salt = await bcrypt.genSalt(10);
   const hashedpassword = await bcrypt.hash(password, salt);
-  const user = {
+  const user: UserModel = {
     userId: uuidv4(),
     fullname,
     phone,
@@ -52,15 +63,24 @@ export const register = async (req: Request, res: Response) => {
 
   try {
     await createTable(userSchema);
-    const userAlreadyExists = await checkRecordExists("users", "email", email);
-    if (userAlreadyExists) {
-      res.status(409).json({ message: "Email already exists" });
+    const existingUser = await checkRecordExists("users", "email", email);
+    if (existingUser) {
+      res.status(409).json({ message: "Email already exists", status: 409 });
     } else {
       await insertRecord("users", user);
-      res.status(201).json({ message: "User created successfully" });
+      res.status(201).json({
+        message: "User created successfully",
+        status: 201,
+        data: {
+          userId: user.userId,
+          fullname: user.fullname,
+          phone: user.phone,
+          email: user.email,
+        },
+      });
     }
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message });
+    res.status(500).json({ message: (error as Error).message, status: 500 });
   }
 };
 
@@ -68,9 +88,10 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    res
-      .status(400)
-      .json({ message: "Email or Password fields cannot be empty" });
+    res.status(400).json({
+      message: "Email or Password fields cannot be empty",
+      status: 400,
+    });
     return;
   }
 
@@ -86,6 +107,7 @@ export const login = async (req: Request, res: Response) => {
         if (accessToken) {
           res.status(200).json({
             message: "Login Successful",
+            status: 200,
             accessToken,
             data: {
               userId: existingUser.userId,
@@ -95,17 +117,22 @@ export const login = async (req: Request, res: Response) => {
             },
           });
         } else {
-          res
-            .status(500)
-            .json({ message: "Some error occured. Please try again!" });
+          res.status(500).json({
+            message: "Some error occured. Please try again!",
+            status: 500,
+          });
         }
       } else {
-        res.status(401).json({ message: "Email or Password does not match" });
+        res
+          .status(401)
+          .json({ message: "Email or Password does not match", status: 401 });
       }
     } else {
-      res.status(401).json({ message: "Email or Password does not match" });
+      res
+        .status(401)
+        .json({ message: "Email or Password does not match", status: 401 });
     }
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message });
+    res.status(500).json({ message: (error as Error).message, status: 500 });
   }
 };

@@ -47,8 +47,6 @@ export const checkRecordExists: ICheckRecordExists = async (
 export const insertRecord: IInsertRecord = async (tableName, record) => {
   const pool = await poolPromise;
   return new Promise((resolve, reject) => {
-    console.log(tableName, record);
-
     const columns = Object.keys(record).join(", ");
     const values = Object.keys(record)
       .map((key) => `@${key}`)
