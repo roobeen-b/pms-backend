@@ -31,8 +31,7 @@ export const verifyToken = (
     jwt.verify(token, secret, (err, decoded) => {
       if (err) {
         res.status(403).json({
-          message:
-            err.name === "TokenExpiredError" ? "Token expired" : "Forbidden",
+          message: "Forbidden",
           status: 403,
         });
         return resolve();
