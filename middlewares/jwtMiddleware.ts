@@ -8,8 +8,7 @@ export const verifyToken = (
   next: NextFunction
 ): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
+    const token = req.cookies.accessToken;
 
     if (!token) {
       res.status(401).json({
@@ -28,14 +27,8 @@ export const verifyToken = (
       return resolve();
     }
 
-    jwt.verify(token, secret, (err, decoded) => {
-      if (err) {
-        res.status(403).json({
-          message: "Forbidden",
-          status: 403,
-        });
-        return resolve();
-      }
+    try {
+      const decoded = jwt.verify(token, secret);
 
       if (decoded && typeof decoded === "object" && "userId" in decoded) {
         req.userId = (decoded as { userId: string }).userId;
@@ -48,6 +41,12 @@ export const verifyToken = (
         });
         return resolve();
       }
-    });
+    } catch (error) {
+      res.status(403).json({
+        message: "Forbidden",
+        status: 403,
+      });
+      return resolve();
+    }
   });
 };

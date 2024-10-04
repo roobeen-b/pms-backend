@@ -8,6 +8,7 @@ import {
   insertRecord,
 } from "../utils/sqlFunctions";
 import { userSchema } from "../schemas/user.schema";
+import { allowedOrigins } from "../db/allowedOrigins";
 
 interface UserModel {
   userId: string;
@@ -105,17 +106,38 @@ export const login = async (req: Request, res: Response) => {
       if (passwordsMatch) {
         const accessToken = await generateAccessToken(existingUser.userId);
         if (accessToken) {
-          res.status(200).json({
-            message: "Login Successful",
-            status: 200,
-            accessToken,
-            data: {
-              userId: existingUser.userId,
-              fullname: existingUser.fullname,
-              phone: existingUser.phone,
-              email: existingUser.email,
-            },
-          });
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+          const origin = req.headers.origin;
+          if (origin && allowedOrigins.includes(origin)) {
+            res.setHeader("Access-Control-Allow-Origin", origin);
+          }
+          res.setHeader(
+            "Access-Control-Allow-Headers",
+            "Origin, X-Requested-With, Content-Type, Accept, authorization"
+          );
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader(
+            "Access-Control-Allow-METHODS",
+            "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, PATCH"
+          );
+          res
+            .cookie("accessToken", accessToken, {
+              httpOnly: true,
+              maxAge: 7 * 24 * 60 * 60 * 1000,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "none",
+            })
+            .status(200)
+            .json({
+              message: "Login Successful",
+              status: 200,
+              data: {
+                userId: existingUser.userId,
+                fullname: existingUser.fullname,
+                phone: existingUser.phone,
+                email: existingUser.email,
+              },
+            });
         } else {
           res.status(500).json({
             message: "Some error occured. Please try again!",

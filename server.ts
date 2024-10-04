@@ -1,5 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
+
 dotenv.config();
 import cors from "cors";
 import { connectDB } from "./db/db";
@@ -9,6 +11,8 @@ import appointmentRoutes from "./routes/appointment.route";
 const port = process.env.PORT;
 
 const app = express();
+
+app.use(cookieParser());
 
 app.use(cors());
 app.use(express.json());
