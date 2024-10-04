@@ -23,7 +23,9 @@ class PatientService {
         if (err) {
           throw new Error(err.message);
         } else {
-          return result.recordset.length ? result.recordset[0] : null;
+          return result.recordset && result.recordset.length
+            ? result.recordset[0]
+            : null;
         }
       });
     } catch (error) {
@@ -52,7 +54,9 @@ class PatientService {
         if (err) {
           throw new Error(err.message);
         } else {
-          return result.recordset.length ? result.recordset[0] : null;
+          return result.recordset && result.recordset.length
+            ? result.recordset[0]
+            : null;
         }
       });
     } catch (error) {
@@ -70,7 +74,9 @@ class PatientService {
 
       const result = await pool.request().input("userId", userId).query(query);
 
-      return result.recordset.length ? result.recordset[0] : null;
+      return result.recordset && result.recordset.length
+        ? result.recordset[0]
+        : null;
     } catch (error) {
       throw new Error(
         `Error fetching patient info: ${(error as Error).message}`
