@@ -15,12 +15,17 @@ interface UserModel {
   phone: string;
   email: string;
   password: string;
+  role: "user" | "doctor" | "admin";
 }
 
-const generateAccessToken = async (userId: string): Promise<string> => {
+const generateAccessToken = async (
+  userId: string,
+  role: string
+): Promise<string> => {
   return jwt.sign(
     {
       userId,
+      role,
     },
     process.env.JWT_SECRET as string,
     { expiresIn: "7d" }
@@ -28,7 +33,7 @@ const generateAccessToken = async (userId: string): Promise<string> => {
 };
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, confirmPassword, fullname, phone } = req.body;
+  const { email, password, confirmPassword, fullname, phone, role } = req.body;
 
   if (!email || !password || !confirmPassword) {
     res.status(400).json({
@@ -38,7 +43,7 @@ export const register = async (req: Request, res: Response) => {
     return;
   }
 
-  if (!fullname || !phone) {
+  if (!fullname || !phone || !role) {
     res.status(400).json({
       message: "Please fill all the required fields.",
       status: 400,
@@ -59,6 +64,7 @@ export const register = async (req: Request, res: Response) => {
     phone,
     email,
     password: hashedpassword,
+    role,
   };
 
   try {
@@ -76,6 +82,7 @@ export const register = async (req: Request, res: Response) => {
           fullname: user.fullname,
           phone: user.phone,
           email: user.email,
+          role: user.role,
         },
       });
     }
@@ -103,7 +110,10 @@ export const login = async (req: Request, res: Response) => {
         existingUser.password
       );
       if (passwordsMatch) {
-        const accessToken = await generateAccessToken(existingUser.userId);
+        const accessToken = await generateAccessToken(
+          existingUser.userId,
+          existingUser.role
+        );
         if (accessToken) {
           res.status(200).json({
             message: "Login Successful",
@@ -114,6 +124,7 @@ export const login = async (req: Request, res: Response) => {
               fullname: existingUser.fullname,
               phone: existingUser.phone,
               email: existingUser.email,
+              role: existingUser.role,
             },
           });
         } else {

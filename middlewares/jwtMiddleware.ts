@@ -37,8 +37,14 @@ export const verifyToken = (
         return resolve();
       }
 
-      if (decoded && typeof decoded === "object" && "userId" in decoded) {
+      if (
+        decoded &&
+        typeof decoded === "object" &&
+        "userId" in decoded &&
+        "role" in decoded
+      ) {
         req.userId = (decoded as { userId: string }).userId;
+        req.role = (decoded as { role: string }).role;
         next();
         return resolve();
       } else {
