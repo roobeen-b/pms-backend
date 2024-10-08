@@ -1,6 +1,9 @@
 import * as sql from "mssql";
 import { config } from "../db/config";
-import { CreateAppointmentModel } from "../models/appointment.model";
+import {
+  CreateAppointmentModel,
+  UpdateAppointmentModel,
+} from "../models/appointment.model";
 
 class AppointmentService {
   static poolPromise = new sql.ConnectionPool(config).connect();
@@ -34,10 +37,46 @@ class AppointmentService {
     }
   }
 
+  static async updateAppointment(appointmentData: UpdateAppointmentModel) {
+    try {
+      const pool = await this.poolPromise;
+      const setClause = Object.keys(appointmentData)
+        .map((key) => `${key} = @${key}`)
+        .join(", ");
+
+      const query = `UPDATE appointments 
+        SET ${setClause}
+         WHERE appointmentId=@appointmentId`;
+
+      const request = pool.request();
+      Object.keys(appointmentData).forEach((key) => {
+        request.input(key, (appointmentData as any)[key]);
+      });
+
+      return request.query(query, (err: Error | undefined, result: any) => {
+        if (err) {
+          throw new Error(err.message);
+        } else {
+          return result.recordset && result.recordset.length
+            ? result.recordset[0]
+            : null;
+        }
+      });
+    } catch (error) {
+      throw new Error(
+        `Error updating appointment: ${(error as Error).message}`
+      );
+    }
+  }
+
   static async getAllAppointmentsByUser(userId: string) {
     try {
       const pool = await this.poolPromise;
-      const query = `SELECT * FROM appointments WHERE userId = @userId`;
+      const query = `SELECT fullname, phone, email, a.* 
+      FROM appointments as a JOIN users as u 
+      ON a.userId = u.userId
+      WHERE a.userId = @userId
+      ORDER BY a.schedule`;
       const result = await pool.request().input("userId", userId).query(query);
       return result.recordset && result.recordset.length
         ? result.recordset
@@ -52,7 +91,10 @@ class AppointmentService {
   static async getAllAppointments() {
     try {
       const pool = await this.poolPromise;
-      const query = "SELECT * FROM appointments";
+      const query = `SELECT fullname, phone, email, a.* 
+      FROM appointments as a JOIN users as u 
+      ON a.userId = u.userId
+      ORDER BY a.schedule`;
       const result = await pool.request().query(query);
       return result.recordset && result.recordset.length
         ? result.recordset

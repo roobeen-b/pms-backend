@@ -9,3 +9,5 @@ export interface CreateAppointmentModel {
   cancellationReason?: string;
   userId: string;
 }
+
+export interface UpdateAppointmentModel extends CreateAppointmentModel {}
