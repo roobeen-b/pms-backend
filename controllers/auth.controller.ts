@@ -8,6 +8,8 @@ import {
   insertRecord,
 } from "../utils/sqlFunctions";
 import { userSchema } from "../schemas/user.schema";
+import { CustomRequest } from "../custom";
+import UserService from "../services/user.service";
 
 interface UserModel {
   userId: string;
@@ -145,5 +147,47 @@ export const login = async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(500).json({ message: (error as Error).message, status: 500 });
+  }
+};
+
+export const updateUserInfo = async (req: CustomRequest, res: Response) => {
+  const userId = req.userId;
+
+  const { fullname, email, phone } = req.body;
+
+  if (!userId) {
+    res.status(400).json({
+      message: "User Id is required.",
+      status: 400,
+    });
+    return;
+  }
+
+  try {
+    const userExists = await checkRecordExists("users", "userId", userId);
+
+    if (!userExists) {
+      res.status(200).json({
+        message: "User does not exist.",
+        status: 200,
+      });
+      return;
+    }
+    await UserService.updateUserInfo({
+      userId,
+      fullname,
+      email,
+      phone,
+    });
+
+    res.status(200).json({
+      message: "User updated successfully.",
+      status: 200,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: (error as Error).message,
+      status: 500,
+    });
   }
 };

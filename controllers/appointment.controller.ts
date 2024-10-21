@@ -52,7 +52,7 @@ export const createAppointment = async (req: Request, res: Response) => {
   }
 };
 
-export const updateAppointment = async (req: Request, res: Response) => {
+export const updateAppointment = async (req: CustomRequest, res: Response) => {
   const {
     schedule,
     reason,
@@ -63,6 +63,22 @@ export const updateAppointment = async (req: Request, res: Response) => {
     userId,
     appointmentId,
   } = req.body;
+
+  const userRole = req.role;
+
+  if (
+    cancellationReason === "" ||
+    cancellationReason === null ||
+    cancellationReason === undefined
+  ) {
+    if (userRole !== "Admin" && userRole !== "Doctor") {
+      res.status(403).json({
+        message: "You are not authorized to perform this action.",
+        status: 403,
+      });
+      return;
+    }
+  }
 
   if (!appointmentId) {
     res.status(400).json({
@@ -99,9 +115,9 @@ export const updateAppointment = async (req: Request, res: Response) => {
     );
     if (appointmentExists) {
       await AppointmentService.updateAppointment(appointment);
-      res.status(201).json({
+      res.status(200).json({
         message: "Appointment updated successfully.",
-        status: 201,
+        status: 200,
       });
     } else {
       res.status(200).json({

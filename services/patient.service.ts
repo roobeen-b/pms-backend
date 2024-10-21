@@ -19,15 +19,10 @@ class PatientService {
         request.input(key, (patientData as any)[key]);
       });
 
-      request.query(query, (err: Error | undefined, result: any) => {
-        if (err) {
-          throw new Error(err.message);
-        } else {
-          return result.recordset && result.recordset.length
-            ? result.recordset[0]
-            : null;
-        }
-      });
+      const result = await request.query(query);
+      return result.recordset && result.recordset.length
+        ? result.recordset[0]
+        : null;
     } catch (error) {
       throw new Error("Error registering patient: " + (error as Error).message);
     }
@@ -50,15 +45,10 @@ class PatientService {
         request.input(key, (patientData as any)[key]);
       });
 
-      request.query(query, (err: Error | undefined, result: any) => {
-        if (err) {
-          throw new Error(err.message);
-        } else {
-          return result.recordset && result.recordset.length
-            ? result.recordset[0]
-            : null;
-        }
-      });
+      const result = await request.query(query);
+      return result.recordset && result.recordset.length
+        ? result.recordset[0]
+        : null;
     } catch (error) {
       throw new Error("Error registering patient: " + (error as Error).message);
     }
