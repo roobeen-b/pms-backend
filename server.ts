@@ -6,6 +6,8 @@ import { connectDB } from "./db/db";
 import authRoutes from "./routes/auth.route";
 import patientRoutes from "./routes/patient.route";
 import appointmentRoutes from "./routes/appointment.route";
+import doctorRoutes from "./routes/doctor.route";
+
 const port = process.env.PORT;
 
 const app = express();
@@ -17,6 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/", authRoutes);
 app.use("/patient", patientRoutes);
 app.use("/appointments", appointmentRoutes);
+app.use("/doctors", doctorRoutes);
 
 connectDB();
 
