@@ -31,6 +31,46 @@ class DoctorService {
       throw new Error(`Error registering doctor: ${(error as Error).message}`);
     }
   }
+
+  static async getAllDoctors() {
+    try {
+      const pool = await this.poolPromise;
+      const query = `SELECT d.*, u.fullname, u.phone, u.email, s.sname as specialty
+      FROM doctors as d JOIN users as u
+       ON d.doctorId = u.userId
+       JOIN specialties s
+       ON d.specialties = s.id
+       `;
+      const result = await pool.request().query(query);
+      return result.recordset && result.recordset.length
+        ? result.recordset
+        : null;
+    } catch (error) {
+      throw new Error(`Error fetching doctors: ${(error as Error).message}`);
+    }
+  }
+
+  static async getDoctorById(doctorId: string) {
+    try {
+      const pool = await this.poolPromise;
+      const query = `SELECT d.*, u.fullname, u.phone, u.email, s.sname as specialty
+      FROM doctors as d JOIN users as u
+       ON d.doctorId = u.userId
+       JOIN specialties s
+       ON d.specialties = s.id
+       WHERE d.doctorId = @doctorId
+       `;
+      const result = await pool
+        .request()
+        .input("doctorId", doctorId)
+        .query(query);
+      return result.recordset && result.recordset.length
+        ? result.recordset[0]
+        : null;
+    } catch (error) {
+      throw new Error(`Error fetching doctors: ${(error as Error).message}`);
+    }
+  }
 }
 
 export default DoctorService;

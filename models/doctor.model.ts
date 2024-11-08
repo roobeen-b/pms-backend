@@ -6,4 +6,5 @@ export interface DoctorModel {
   doctorPhoto: string;
   docLicenseNo: string;
   specialties: number;
+  doctorDesc: string;
 }
