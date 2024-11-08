@@ -70,7 +70,29 @@ class AppointmentService {
       const result = await pool.request().input("userId", userId).query(query);
       return result.recordset && result.recordset.length
         ? result.recordset
-        : null;
+        : [];
+    } catch (error) {
+      throw new Error(
+        `Error fetching appointments: ${(error as Error).message}`
+      );
+    }
+  }
+
+  static async getAllAppointmentsByDoctor(doctorId: string) {
+    try {
+      const pool = await this.poolPromise;
+      const query = `SELECT fullname, phone, email, a.* 
+      FROM appointments as a JOIN users as u 
+      ON a.doctorId = u.userId
+      WHERE a.doctorId = @doctorId
+      ORDER BY a.schedule`;
+      const result = await pool
+        .request()
+        .input("doctorId", doctorId)
+        .query(query);
+      return result.recordset && result.recordset.length
+        ? result.recordset
+        : [];
     } catch (error) {
       throw new Error(
         `Error fetching appointments: ${(error as Error).message}`
@@ -88,7 +110,7 @@ class AppointmentService {
       const result = await pool.request().query(query);
       return result.recordset && result.recordset.length
         ? result.recordset
-        : null;
+        : [];
     } catch (error) {
       throw new Error(
         `Error fetching appointments: ${(error as Error).message}`

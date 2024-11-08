@@ -1,3 +1,7 @@
 import { Request } from "express";
 
-type CustomRequest = Request & { userId?: string; role?: string };
+type CustomRequest = Request & {
+  userId?: string;
+  role?: string;
+  doctorId?: string;
+};

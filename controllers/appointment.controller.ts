@@ -163,6 +163,36 @@ export const getAllAppointmentsByUser = async (
   }
 };
 
+export const getAllAppointmentsByDoctor = async (
+  req: CustomRequest,
+  res: Response
+) => {
+  const doctorId = req.userId;
+
+  if (!doctorId) {
+    res.status(400).json({
+      message: "Please provide doctor id.",
+      status: 400,
+    });
+    return;
+  }
+  try {
+    const allAppointments = await AppointmentService.getAllAppointmentsByDoctor(
+      doctorId
+    );
+    res.status(200).json({
+      message: "Successful",
+      status: 200,
+      data: allAppointments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: (error as Error).message,
+      status: 500,
+    });
+  }
+};
+
 export const getAllAppointments = async (req: Request, res: Response) => {
   try {
     const allAppointments = await AppointmentService.getAllAppointments();
