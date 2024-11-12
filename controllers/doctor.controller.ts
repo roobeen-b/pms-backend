@@ -110,3 +110,28 @@ export const getDoctorById = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const deleteDoctor = async (req: Request, res: Response) => {
+  try {
+    const doctorId = req.query.doctorId as string;
+
+    if (!doctorId) {
+      res.status(404).json({
+        message: "Doctor not found.",
+        status: 404,
+      });
+      return;
+    }
+
+    const result = await DoctorService.deleteDoctor(doctorId);
+
+    if (result) {
+      res.status(200).json({
+        message: "Successful",
+        status: 200,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message, status: 500 });
+  }
+};

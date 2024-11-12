@@ -17,6 +17,7 @@ export const createAppointment = async (req: Request, res: Response) => {
     status,
     cancellationReason,
     userId,
+    doctorId,
   } = req.body;
 
   if (!schedule || !reason || !primaryPhysician || !status) {
@@ -36,6 +37,7 @@ export const createAppointment = async (req: Request, res: Response) => {
     status,
     cancellationReason,
     userId,
+    doctorId,
   };
 
   try {
@@ -61,6 +63,7 @@ export const updateAppointment = async (req: CustomRequest, res: Response) => {
     status,
     cancellationReason,
     userId,
+    doctorId,
     appointmentId,
   } = req.body;
 
@@ -105,6 +108,7 @@ export const updateAppointment = async (req: CustomRequest, res: Response) => {
     status,
     cancellationReason,
     userId,
+    doctorId,
   };
 
   try {
@@ -206,5 +210,30 @@ export const getAllAppointments = async (req: Request, res: Response) => {
       message: (error as Error).message,
       status: 500,
     });
+  }
+};
+
+export const deleteAppointment = async (req: Request, res: Response) => {
+  try {
+    const appointmentId = req.query.appointmentId as string;
+
+    if (!appointmentId) {
+      res.status(404).json({
+        message: "Appointment not found.",
+        status: 404,
+      });
+      return;
+    }
+
+    const result = await AppointmentService.deleteAppointment(appointmentId);
+
+    if (result) {
+      res.status(200).json({
+        message: "Successful",
+        status: 200,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message, status: 500 });
   }
 };

@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  deleteDoctor,
   getAllDoctors,
   getDoctorById,
   registerDoctorInfo,
@@ -16,5 +17,6 @@ router.post(
 );
 router.get("/getAllDoctors", getAllDoctors);
 router.get("/getDoctorById", verifyToken, getDoctorById);
+router.delete("/deleteDoctor", verifyToken, deleteDoctor);
 
 export default router;

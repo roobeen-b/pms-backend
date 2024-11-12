@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createAppointment,
+  deleteAppointment,
   getAllAppointments,
   getAllAppointmentsByDoctor,
   getAllAppointmentsByUser,
@@ -14,5 +15,6 @@ router.get("/getAppointmentsByUser", verifyToken, getAllAppointmentsByUser);
 router.get("/getAppointmentsByDoctor", verifyToken, getAllAppointmentsByDoctor);
 router.post("/create", verifyToken, createAppointment);
 router.put("/update", verifyToken, updateAppointment);
+router.delete("/deleteAppointment", verifyToken, deleteAppointment);
 
 export default router;

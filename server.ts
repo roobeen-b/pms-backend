@@ -8,6 +8,11 @@ import patientRoutes from "./routes/patient.route";
 import appointmentRoutes from "./routes/appointment.route";
 import doctorRoutes from "./routes/doctor.route";
 import specialtyRoutes from "./routes/specialty.route";
+import { verifyToken } from "./middlewares/jwtMiddleware";
+import AppointmentService from "./services/appointment.service";
+import PatientService from "./services/patient.service";
+import DoctorService from "./services/doctor.service";
+import { CustomRequest } from "./custom";
 
 const port = process.env.PORT;
 
@@ -22,6 +27,24 @@ app.use("/patient", patientRoutes);
 app.use("/appointments", appointmentRoutes);
 app.use("/doctors", doctorRoutes);
 app.use("/specialty", specialtyRoutes);
+app.use("/getAllCounts", verifyToken, async (req: CustomRequest, res) => {
+  const id = req.userId;
+  try {
+    const appointmentCount = await AppointmentService.getAllAppointmentsCount(
+      req.role!,
+      id!
+    );
+    const patientCount = await PatientService.getAllPatientsCount();
+    const doctorCount = await DoctorService.getAllDoctorsCount();
+    res.status(200).json({
+      message: "Successful",
+      status: 200,
+      data: { appointmentCount, patientCount, doctorCount },
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message, status: 500 });
+  }
+});
 
 connectDB();
 

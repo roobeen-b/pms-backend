@@ -5,6 +5,13 @@ import {
   UpdateAppointmentModel,
 } from "../models/appointment.model";
 
+interface AppointmentCounts {
+  allAppointments: number;
+  pendingAppointments: number;
+  scheduledAppointments: number;
+  cancelledAppointments: number;
+}
+
 class AppointmentService {
   static poolPromise = new sql.ConnectionPool(config).connect();
 
@@ -63,7 +70,7 @@ class AppointmentService {
     try {
       const pool = await this.poolPromise;
       const query = `SELECT fullname, phone, email, a.* 
-      FROM appointments as a JOIN users as u 
+      FROM appointments AS a JOIN users AS u 
       ON a.userId = u.userId
       WHERE a.userId = @userId
       ORDER BY a.schedule`;
@@ -82,8 +89,9 @@ class AppointmentService {
     try {
       const pool = await this.poolPromise;
       const query = `SELECT fullname, phone, email, a.* 
-      FROM appointments as a JOIN users as u 
-      ON a.doctorId = u.userId
+      FROM appointments AS a
+      JOIN users AS u 
+      ON a.userId = u.userId
       WHERE a.doctorId = @doctorId
       ORDER BY a.schedule`;
       const result = await pool
@@ -114,6 +122,73 @@ class AppointmentService {
     } catch (error) {
       throw new Error(
         `Error fetching appointments: ${(error as Error).message}`
+      );
+    }
+  }
+
+  static async getAllAppointmentsCount(role: string, id: string) {
+    try {
+      const pool = await this.poolPromise;
+      let query, result;
+      if (role === "Admin") {
+        query = `SELECT * FROM appointments`;
+        result = await pool.request().query(query!);
+      } else if (role === "Doctor") {
+        query = `SELECT * 
+                  FROM appointments AS a
+                  WHERE a.doctorId = @doctorId
+                  `;
+        result = await pool.request().input("doctorId", id).query(query!);
+      } else {
+        query = `SELECT * 
+                  FROM appointments AS a
+                  WHERE a.userId = @userId
+                  `;
+        result = await pool.request().input("userId", id).query(query!);
+      }
+      const allAppointments = result?.recordset.length && result.recordset;
+
+      const initialCounts: AppointmentCounts = {
+        allAppointments: 0,
+        pendingAppointments: 0,
+        scheduledAppointments: 0,
+        cancelledAppointments: 0,
+      };
+
+      const appointmentCounts = (
+        allAppointments as CreateAppointmentModel[]
+      )?.reduce((acc: AppointmentCounts, curr: CreateAppointmentModel) => {
+        if (curr.status === "pending") {
+          acc.pendingAppointments += 1;
+        } else if (curr.status === "scheduled") {
+          acc.scheduledAppointments += 1;
+        } else if (curr.status === "cancelled") {
+          acc.cancelledAppointments += 1;
+        }
+        acc.allAppointments += 1;
+        return acc;
+      }, initialCounts);
+
+      return appointmentCounts;
+    } catch (error) {
+      throw new Error(
+        `Error fetching appointments count: ${(error as Error).message}`
+      );
+    }
+  }
+
+  static async deleteAppointment(appointmentId: string) {
+    try {
+      const pool = await this.poolPromise;
+      const query = `DELETE FROM appointments WHERE appointmentId = @appointmentId`;
+      const result = await pool
+        .request()
+        .input("appointmentId", appointmentId)
+        .query(query);
+      return result && result.recordset && result.recordset[0];
+    } catch (error) {
+      throw new Error(
+        `Error deleting appointments count: ${(error as Error).message}`
       );
     }
   }

@@ -85,10 +85,10 @@ export const getPatientInfo = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.userId;
+    const patientId = req.query.patientId as string;
 
-    if (userId) {
-      const patientData = await PatientService.getPatientInfo(userId);
+    if (patientId) {
+      const patientData = await PatientService.getPatientInfo(patientId);
 
       if (patientData !== undefined && patientData !== null) {
         res.status(200).json({
@@ -102,6 +102,47 @@ export const getPatientInfo = async (
           status: 200,
         });
       }
+    }
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message, status: 500 });
+  }
+};
+
+export const getAllPatients = async (req: Request, res: Response) => {
+  try {
+    const allPatients = await PatientService.getAllPatients();
+
+    if (allPatients) {
+      res.status(200).json({
+        message: "Suceessful",
+        status: 200,
+        data: allPatients,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message, status: 500 });
+  }
+};
+
+export const deletePatient = async (req: Request, res: Response) => {
+  try {
+    const patientId = req.query.patientId as string;
+
+    if (!patientId) {
+      res.status(404).json({
+        message: "Patient not found.",
+        status: 404,
+      });
+      return;
+    }
+
+    const result = await PatientService.deletePatient(patientId);
+
+    if (result) {
+      res.status(200).json({
+        message: "Successful",
+        status: 200,
+      });
     }
   } catch (error) {
     res.status(500).json({ message: (error as Error).message, status: 500 });

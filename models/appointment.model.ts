@@ -8,6 +8,7 @@ export interface CreateAppointmentModel {
   status: Status;
   cancellationReason?: string;
   userId: string;
+  doctorId?: string;
 }
 
 export interface UpdateAppointmentModel extends CreateAppointmentModel {}

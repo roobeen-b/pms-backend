@@ -71,6 +71,35 @@ class DoctorService {
       throw new Error(`Error fetching doctors: ${(error as Error).message}`);
     }
   }
+
+  static async getAllDoctorsCount() {
+    try {
+      const pool = await this.poolPromise;
+      const query = `SELECT COUNT(*) as doctorCount FROM doctors`;
+      const result = await pool.request().query(query);
+      return result.recordset.length && result.recordset[0].doctorCount;
+    } catch (error) {
+      throw new Error(
+        `Error fetching doctors count: ${(error as Error).message}`
+      );
+    }
+  }
+
+  static async deleteDoctor(doctorId: string) {
+    try {
+      const pool = await this.poolPromise;
+      const query = `DELETE FROM doctors WHERE doctorId = @doctorId`;
+      const result = await pool
+        .request()
+        .input("doctorId", doctorId)
+        .query(query);
+      return result && result.recordset && result.recordset[0];
+    } catch (error) {
+      throw new Error(
+        `Error deleting appointments count: ${(error as Error).message}`
+      );
+    }
+  }
 }
 
 export default DoctorService;
