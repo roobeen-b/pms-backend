@@ -13,10 +13,14 @@ import AppointmentService from "./services/appointment.service";
 import PatientService from "./services/patient.service";
 import DoctorService from "./services/doctor.service";
 import { CustomRequest } from "./custom";
+import { logger } from "./middlewares/logEvents";
+import { errorHandler } from "./middlewares/errorHandler";
 
 const port = process.env.PORT;
 
 const app = express();
+
+app.use(logger);
 
 app.use(cors());
 app.use(express.json());
@@ -47,6 +51,8 @@ app.use("/getAllCounts", verifyToken, async (req: CustomRequest, res) => {
 });
 
 connectDB();
+
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
