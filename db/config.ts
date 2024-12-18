@@ -7,10 +7,10 @@ interface Config {
 }
 
 export const config: Config = {
-  server: process.env.DB_SERVER || "DESKTOP-KRG83NC\\SQLEXPRESS",
-  user: process.env.DB_USER || "sa",
-  password: process.env.DB_PASSWORD || "password",
-  database: process.env.DB_DATABASE || "PatientManagementSystemDB",
+  server: process.env.DB_SERVER!,
+  user: process.env.DB_USER!,
+  password: process.env.DB_PASSWORD!,
+  database: process.env.DB_DATABASE!,
   options: {
     encrypt: true,
     trustServerCertificate: true,

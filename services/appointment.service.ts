@@ -130,10 +130,10 @@ class AppointmentService {
     try {
       const pool = await this.poolPromise;
       let query, result;
-      if (role === "Admin") {
+      if (role === "admin") {
         query = `SELECT * FROM appointments`;
         result = await pool.request().query(query!);
-      } else if (role === "Doctor") {
+      } else if (role === "doctor") {
         query = `SELECT * 
                   FROM appointments AS a
                   WHERE a.doctorId = @doctorId
