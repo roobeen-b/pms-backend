@@ -1,25 +1,22 @@
-import * as sql from "mssql";
+import { Pool } from "pg";
 import { config } from "../db/config";
 
 class SpecialtyService {
-  static poolPromise = new sql.ConnectionPool(config).connect();
+  static pool = new Pool(config);
 
   static async getAllSpecialties() {
-    const pool = await this.poolPromise;
+    const client = await this.pool.connect();
 
     try {
-      const request = pool.request();
-
       const query = "SELECT * FROM specialties ORDER BY sname";
-
-      const result = await request.query(query);
-      return result.recordset && result.recordset.length
-        ? result.recordset
-        : null;
+      const result = await client.query(query);
+      return result.rows.length ? result.rows : null;
     } catch (error) {
       throw new Error(
         `Error fetching specialties: ${(error as Error).message}`
       );
+    } finally {
+      client.release(); // Release the client back to the pool
     }
   }
 }

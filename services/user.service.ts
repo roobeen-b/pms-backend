@@ -1,29 +1,28 @@
-import { UpdateUserModel } from "../models/user.model";
-import * as sql from "mssql";
+import { Pool } from "pg";
 import { config } from "../db/config";
+import { UpdateUserModel } from "../models/user.model";
 
 class UserService {
-  static poolPromise = new sql.ConnectionPool(config).connect();
+  static pool = new Pool(config);
 
   static async updateUserInfo(userData: UpdateUserModel) {
+    const client = await this.pool.connect();
     try {
-      const poolPromise = await this.poolPromise;
       const setClause = Object.keys(userData)
-        .map((key) => `${key} = @${key}`)
+        .map((key, idx) => `${key} = $${idx + 1}`)
         .join(", ");
-      const updateQuery = `UPDATE users SET ${setClause} WHERE userId = @userId`;
-      const request = poolPromise.request();
-      Object.keys(userData).forEach((key) => {
-        request.input(key, (userData as any)[key]);
-      });
+      const updateQuery = `UPDATE users SET ${setClause} WHERE userId = $${
+        Object.keys(userData).length + 1
+      }`;
+      const valuesArray = [...Object.values(userData), userData.userId];
 
-      const result = await request.query(updateQuery);
-      return result.recordset && result.recordset.length
-        ? result.recordset[0]
-        : null;
+      const result = await client.query(updateQuery, valuesArray);
+      return result.rows && result.rows.length ? result.rows[0] : null;
     } catch (error) {
       console.log(error);
       throw new Error("Error updating user: " + (error as Error).message);
+    } finally {
+      client.release();
     }
   }
 }

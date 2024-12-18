@@ -1,126 +1,110 @@
+import { Pool } from "pg";
 import { config } from "../db/config";
-import * as sql from "mssql";
 import { PatientModel, UpdatePatientModel } from "../models/patient.model";
 
 class PatientService {
-  static poolPromise = new sql.ConnectionPool(config).connect();
+  static pool = new Pool(config);
 
   static async registerPatientInfo(patientData: PatientModel) {
+    const client = await this.pool.connect();
     try {
-      const pool = await PatientService.poolPromise;
       const columns = Object.keys(patientData).join(", ");
       const values = Object.keys(patientData)
-        .map((key) => `@${key}`)
+        .map((_, idx) => `$${idx + 1}`)
         .join(", ");
-      const query = `INSERT INTO patients (${columns}) VALUES (${values})`;
+      const query = `INSERT INTO patients (${columns}) VALUES (${values}) RETURNING *`;
+      const valuesArray = Object.values(patientData);
 
-      const request = pool.request();
-      Object.keys(patientData).forEach((key) => {
-        request.input(key, (patientData as any)[key]);
-      });
-
-      const result = await request.query(query);
-      return result.recordset && result.recordset.length
-        ? result.recordset[0]
-        : null;
+      const result = await client.query(query, valuesArray);
+      return result.rows && result.rows.length ? result.rows[0] : null;
     } catch (error) {
       throw new Error("Error registering patient: " + (error as Error).message);
+    } finally {
+      client.release();
     }
   }
 
   static async updatePatientInfo(patientData: UpdatePatientModel) {
+    const client = await this.pool.connect();
     try {
-      const pool = await PatientService.poolPromise;
-
       const setClause = Object.keys(patientData)
-        .map((key) => `${key} = @${key}`)
+        .map((key, idx) => `${key} = $${idx + 1}`)
         .join(", ");
-
       const query = `UPDATE patients 
         SET ${setClause}
-         WHERE userId=@userId`;
+        WHERE userId = $${Object.keys(patientData).length + 1}`;
+      const valuesArray = [...Object.values(patientData), patientData.userId];
 
-      const request = pool.request();
-      Object.keys(patientData).forEach((key) => {
-        request.input(key, (patientData as any)[key]);
-      });
-
-      const result = await request.query(query);
-      return result.recordset && result.recordset.length
-        ? result.recordset[0]
-        : null;
+      const result = await client.query(query, valuesArray);
+      return result.rows && result.rows.length ? result.rows[0] : null;
     } catch (error) {
-      throw new Error("Error registering patient: " + (error as Error).message);
+      throw new Error("Error updating patient: " + (error as Error).message);
+    } finally {
+      client.release();
     }
   }
 
   static async getPatientInfo(patientId: string) {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
       const query = `SELECT patients.*, users.fullname, users.phone, users.email
-         FROM patients JOIN users
-         ON patients.userId = users.userId
-         WHERE patients.userId = @userId`;
+                     FROM patients 
+                     JOIN users ON patients.userId = users.userId
+                     WHERE patients.userId = $1`;
+      const result = await client.query(query, [patientId]);
 
-      const result = await pool
-        .request()
-        .input("userId", patientId)
-        .query(query);
-
-      return result.recordset && result.recordset.length
-        ? result.recordset[0]
-        : null;
+      return result.rows && result.rows.length ? result.rows[0] : null;
     } catch (error) {
       throw new Error(
         `Error fetching patient info: ${(error as Error).message}`
       );
+    } finally {
+      client.release();
     }
   }
 
   static async getAllPatients() {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
       const query = `SELECT patients.*, users.fullname, users.phone, users.email
-         FROM patients JOIN users
-         ON patients.userId = users.userId
-         WHERE users.role = 'User'`;
+                     FROM patients 
+                     JOIN users ON patients.userId = users.userId
+                     WHERE users.role = 'User'`;
+      const result = await client.query(query);
 
-      const result = await pool.request().query(query);
-
-      return result.recordset && result.recordset.length
-        ? result.recordset
-        : [];
+      return result.rows && result.rows.length ? result.rows : [];
     } catch (error) {
       throw new Error(`Error fetching patients: ${(error as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 
   static async getAllPatientsCount() {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
       const query = `SELECT COUNT(*) as patientCount FROM patients`;
-      const result = await pool.request().query(query);
-      return result.recordset.length && result.recordset[0].patientCount;
+      const result = await client.query(query);
+      return result.rows[0].patientCount;
     } catch (error) {
       throw new Error(
         `Error fetching patients count: ${(error as Error).message}`
       );
+    } finally {
+      client.release();
     }
   }
 
   static async deletePatient(patientId: string) {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
-      const query = `DELETE FROM patients WHERE userId = @userId`;
-      const result = await pool
-        .request()
-        .input("userId", patientId)
-        .query(query);
-      return result && result.recordset && result.recordset[0];
+      const query = `DELETE FROM patients WHERE userId = $1 RETURNING *`;
+      const result = await client.query(query, [patientId]);
+      return result.rows && result.rows.length ? result.rows[0] : null;
     } catch (error) {
-      throw new Error(
-        `Error deleting appointments count: ${(error as Error).message}`
-      );
+      throw new Error(`Error deleting patient: ${(error as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 }

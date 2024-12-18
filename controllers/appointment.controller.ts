@@ -74,7 +74,7 @@ export const updateAppointment = async (req: CustomRequest, res: Response) => {
     cancellationReason === null ||
     cancellationReason === undefined
   ) {
-    if (userRole !== "Admin" && userRole !== "Doctor") {
+    if (userRole !== "admin" && userRole !== "doctor") {
       res.status(403).json({
         message: "You are not authorized to perform this action.",
         status: 403,

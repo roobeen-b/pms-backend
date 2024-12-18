@@ -1,103 +1,87 @@
-import * as sql from "mssql";
+import { Pool } from "pg";
 import { config } from "../db/config";
 import { DoctorModel } from "../models/doctor.model";
 
 class DoctorService {
-  static poolPromise = new sql.ConnectionPool(config).connect();
+  static pool = new Pool(config);
 
   static async registerDoctorInfo(doctorInfo: DoctorModel) {
-    const pool = await this.poolPromise;
-
+    const client = await this.pool.connect();
     try {
       const columns = Object.keys(doctorInfo).join(", ");
       const values = Object.keys(doctorInfo)
-        .map((key) => {
-          return `@${key}`;
-        })
+        .map((_, idx) => `$${idx + 1}`)
         .join(", ");
+      const query = `INSERT INTO doctors (${columns}) VALUES (${values}) RETURNING *`;
+      const valuesArray = Object.values(doctorInfo);
 
-      const query = `INSERT INTO doctors (${columns}) VALUES (${values})`;
-      const request = pool.request();
-
-      Object.keys(doctorInfo).forEach((key) => {
-        request.input(key, (doctorInfo as any)[key]);
-      });
-
-      const result = await request.query(query);
-      return result.recordset && result.recordset.length
-        ? result.recordset[0]
-        : null;
+      const result = await client.query(query, valuesArray);
+      return result.rows && result.rows.length ? result.rows[0] : null;
     } catch (error) {
       throw new Error(`Error registering doctor: ${(error as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 
   static async getAllDoctors() {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
       const query = `SELECT d.*, u.fullname, u.phone, u.email, s.sname as specialty
-      FROM doctors as d JOIN users as u
-       ON d.doctorId = u.userId
-       JOIN specialties s
-       ON d.specialties = s.id
-       `;
-      const result = await pool.request().query(query);
-      return result.recordset && result.recordset.length
-        ? result.recordset
-        : null;
+                     FROM doctors as d
+                     JOIN users as u ON d.doctorId = u.userId
+                     JOIN specialties s ON d.specialties = s.id`;
+      const result = await client.query(query);
+      return result.rows.length ? result.rows : null;
     } catch (error) {
       throw new Error(`Error fetching doctors: ${(error as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 
   static async getDoctorById(doctorId: string) {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
       const query = `SELECT d.*, u.fullname, u.phone, u.email, s.sname as specialty
-      FROM doctors as d JOIN users as u
-       ON d.doctorId = u.userId
-       JOIN specialties s
-       ON d.specialties = s.id
-       WHERE d.doctorId = @doctorId
-       `;
-      const result = await pool
-        .request()
-        .input("doctorId", doctorId)
-        .query(query);
-      return result.recordset && result.recordset.length
-        ? result.recordset[0]
-        : null;
+                     FROM doctors as d
+                     JOIN users as u ON d.doctorId = u.userId
+                     JOIN specialties s ON d.specialties = s.id
+                     WHERE d.doctorId = $1`;
+      const result = await client.query(query, [doctorId]);
+      return result.rows.length ? result.rows[0] : null;
     } catch (error) {
-      throw new Error(`Error fetching doctors: ${(error as Error).message}`);
+      throw new Error(`Error fetching doctor: ${(error as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 
   static async getAllDoctorsCount() {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
       const query = `SELECT COUNT(*) as doctorCount FROM doctors`;
-      const result = await pool.request().query(query);
-      return result.recordset.length && result.recordset[0].doctorCount;
+      const result = await client.query(query);
+      return result.rows[0].doctorCount;
     } catch (error) {
       throw new Error(
         `Error fetching doctors count: ${(error as Error).message}`
       );
+    } finally {
+      client.release();
     }
   }
 
   static async deleteDoctor(doctorId: string) {
+    const client = await this.pool.connect();
     try {
-      const pool = await this.poolPromise;
-      const query = `DELETE FROM doctors WHERE doctorId = @doctorId`;
-      const result = await pool
-        .request()
-        .input("doctorId", doctorId)
-        .query(query);
-      return result && result.recordset && result.recordset[0];
+      const query = `DELETE FROM doctors WHERE doctorId = $1 RETURNING *`;
+      const result = await client.query(query, [doctorId]);
+      return result.rows.length ? result.rows[0] : null;
     } catch (error) {
-      throw new Error(
-        `Error deleting appointments count: ${(error as Error).message}`
-      );
+      throw new Error(`Error deleting doctor: ${(error as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 }

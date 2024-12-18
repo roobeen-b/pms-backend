@@ -1,6 +1,6 @@
-import * as sql from "mssql";
+import { Pool } from "pg";
 import { config } from "../db/config";
-const poolPromise = new sql.ConnectionPool(config).connect();
+const pool = new Pool(config);
 
 interface ICreateTable {
   (schema: string): Promise<any>;
@@ -15,12 +15,14 @@ interface IInsertRecord {
 }
 
 export const createTable: ICreateTable = async (schema) => {
-  const pool = await poolPromise;
+  const client = await pool.connect();
   try {
-    const results = await pool.query(schema);
+    const results = await client.query(schema);
     return results;
   } catch (err) {
     throw err;
+  } finally {
+    client.release();
   }
 };
 
@@ -29,41 +31,33 @@ export const checkRecordExists: ICheckRecordExists = async (
   column,
   value
 ) => {
-  const pool = await poolPromise;
-  return new Promise((resolve, reject) => {
-    const query = `SELECT * FROM ${tableName} WHERE ${column} = @value`;
-    const request = pool.request();
-    request.input("value", value);
-    request.query(query, (err: Error | undefined, results: any) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(results.recordset.length ? results.recordset[0] : null);
-      }
-    });
-  });
+  const client = await pool.connect();
+  try {
+    const query = `SELECT * FROM ${tableName} WHERE ${column} = $1`;
+    const result = await client.query(query, [value]);
+    return result.rows.length ? result.rows[0] : null;
+  } catch (err) {
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const insertRecord: IInsertRecord = async (tableName, record) => {
-  const pool = await poolPromise;
-  return new Promise((resolve, reject) => {
+  const client = await pool.connect();
+  try {
     const columns = Object.keys(record).join(", ");
     const values = Object.keys(record)
-      .map((key) => `@${key}`)
+      .map((_, idx) => `$${idx + 1}`)
       .join(", ");
-    const query = `INSERT INTO ${tableName} (${columns}) VALUES (${values})`;
+    const query = `INSERT INTO ${tableName} (${columns}) VALUES (${values}) RETURNING *`;
+    const valuesArray = Object.values(record);
 
-    const request = pool.request();
-    Object.keys(record).forEach((key) => {
-      request.input(key, record[key]);
-    });
-
-    request.query(query, (err: Error | undefined, results: any) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(results);
-      }
-    });
-  });
+    const result = await client.query(query, valuesArray);
+    return result.rows.length ? result.rows[0] : null;
+  } catch (err) {
+    throw err;
+  } finally {
+    client.release();
+  }
 };

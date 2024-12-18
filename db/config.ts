@@ -1,18 +1,15 @@
 interface Config {
-  server: string;
   user: string;
-  password: string;
+  host: string;
   database: string;
-  options: object;
+  password: string;
+  port: number;
 }
 
 export const config: Config = {
-  server: process.env.DB_SERVER || "DESKTOP-KRG83NC\\SQLEXPRESS",
-  user: process.env.DB_USER || "sa",
-  password: process.env.DB_PASSWORD || "password",
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "localhost",
   database: process.env.DB_DATABASE || "PatientManagementSystemDB",
-  options: {
-    encrypt: true,
-    trustServerCertificate: true,
-  },
+  password: process.env.DB_PASSWORD || "password",
+  port: parseInt(process.env.DB_PORT!, 10) || 5432,
 };
