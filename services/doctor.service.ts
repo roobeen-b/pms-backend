@@ -29,7 +29,7 @@ class DoctorService {
     try {
       const query = `SELECT d.*, u.fullname, u.phone, u.email, s.sname as specialty
                      FROM doctors as d
-                     JOIN users as u ON d.doctorId = u.userId
+                     JOIN users as u ON d."doctorId" = u."userId"
                      JOIN specialties s ON d.specialties = s.id`;
       const result = await client.query(query);
       return result.rows.length ? result.rows : null;
@@ -45,9 +45,9 @@ class DoctorService {
     try {
       const query = `SELECT d.*, u.fullname, u.phone, u.email, s.sname as specialty
                      FROM doctors as d
-                     JOIN users as u ON d.doctorId = u.userId
-                     JOIN specialties s ON d.specialties = s.id
-                     WHERE d.doctorId = $1`;
+                     JOIN users as u ON d."doctorId" = u."userId"
+                     JOIN specialties s ON d.specialties = s."id"
+                     WHERE d."doctorId" = $1`;
       const result = await client.query(query, [doctorId]);
       return result.rows.length ? result.rows[0] : null;
     } catch (error) {
@@ -62,7 +62,7 @@ class DoctorService {
     try {
       const query = `SELECT COUNT(*) as doctorCount FROM doctors`;
       const result = await client.query(query);
-      return result.rows[0].doctorCount;
+      return result.rows[0].doctorcount;
     } catch (error) {
       throw new Error(
         `Error fetching doctors count: ${(error as Error).message}`

@@ -58,7 +58,21 @@ class AppointmentService {
   static async getAllAppointmentsByUser(userId: string) {
     const client = await this.pool.connect();
     try {
-      const query = `SELECT fullname, phone, email, a.* FROM appointments AS a JOIN users AS u ON a.userId = u.userId WHERE a.userId = $1 ORDER BY a.schedule`;
+      const query = `SELECT u.fullname, 
+    u.phone, 
+    u.email, 
+    a."appointmentId", 
+    a."schedule", 
+    a."reason", 
+    a."note", 
+    a."primaryPhysician", 
+    a."status", 
+    a."cancellationReason", 
+    a."userId", 
+    a."createdDate", 
+    a."updatedDate", 
+    a."doctorId"
+     FROM appointments AS a JOIN users AS u ON a."userId" = u."userId" WHERE a."userId" = $1 ORDER BY a.schedule`;
       const result = await client.query(query, [userId]);
       return result.rows;
     } catch (error) {
@@ -72,7 +86,20 @@ class AppointmentService {
   static async getAllAppointmentsByDoctor(doctorId: string) {
     const client = await this.pool.connect();
     try {
-      const query = `SELECT fullname, phone, email, a.* FROM appointments AS a JOIN users AS u ON a.userId = u.userId WHERE a.doctorId = $1 ORDER BY a.schedule`;
+      const query = `SELECT u.fullname, 
+    u.phone, 
+    u.email, 
+    a."appointmentId", 
+    a."schedule", 
+    a."reason", 
+    a."note", 
+    a."primaryPhysician", 
+    a."status", 
+    a."cancellationReason", 
+    a."userId", 
+    a."createdDate", 
+    a."updatedDate", 
+    a."doctorId" FROM appointments AS a JOIN users AS u ON a."userId" = u."userId" WHERE a."doctorId" = $1 ORDER BY a.schedule`;
       const result = await client.query(query, [doctorId]);
       return result.rows;
     } catch (error) {
@@ -86,10 +113,29 @@ class AppointmentService {
   static async getAllAppointments() {
     const client = await this.pool.connect();
     try {
-      const query = `SELECT fullname, phone, email, a.* FROM appointments AS a JOIN users AS u ON a.userId = u.userId ORDER BY a.schedule`;
+      const query = `SELECT 
+    u.fullname, 
+    u.phone, 
+    u.email, 
+    a."appointmentId", 
+    a."schedule", 
+    a."reason", 
+    a."note", 
+    a."primaryPhysician", 
+    a."status", 
+    a."cancellationReason", 
+    a."userId", 
+    a."createdDate", 
+    a."updatedDate", 
+    a."doctorId" 
+FROM appointments AS a 
+JOIN users AS u ON a."userId" = u."userId" 
+ORDER BY a."schedule";
+`;
       const result = await client.query(query);
       return result.rows;
     } catch (error) {
+      console.log(error);
       throw new Error(
         `Error fetching appointments: ${(error as Error).message}`
       );
@@ -101,14 +147,14 @@ class AppointmentService {
     const client = await this.pool.connect();
     try {
       let query: string, params: any[];
-      if (role === "Admin") {
+      if (role === "admin") {
         query = `SELECT * FROM appointments`;
         params = [];
-      } else if (role === "Doctor") {
-        query = `SELECT * FROM appointments WHERE doctorId = $1`;
+      } else if (role === "doctor") {
+        query = `SELECT * FROM appointments WHERE "doctorId" = $1`;
         params = [id];
       } else {
-        query = `SELECT * FROM appointments WHERE userId = $1`;
+        query = `SELECT * FROM appointments WHERE "userId" = $1`;
         params = [id];
       }
       const result = await client.query(query, params);

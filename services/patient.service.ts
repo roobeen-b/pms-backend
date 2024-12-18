@@ -49,8 +49,8 @@ class PatientService {
     try {
       const query = `SELECT patients.*, users.fullname, users.phone, users.email
                      FROM patients 
-                     JOIN users ON patients.userId = users.userId
-                     WHERE patients.userId = $1`;
+                     JOIN users ON patients."userId" = users."userId"
+                     WHERE patients."userId" = $1`;
       const result = await client.query(query, [patientId]);
 
       return result.rows && result.rows.length ? result.rows[0] : null;
@@ -68,8 +68,8 @@ class PatientService {
     try {
       const query = `SELECT patients.*, users.fullname, users.phone, users.email
                      FROM patients 
-                     JOIN users ON patients.userId = users.userId
-                     WHERE users.role = 'User'`;
+                     JOIN users ON patients."userId" = users."userId"
+                     WHERE users.role = 'user'`;
       const result = await client.query(query);
 
       return result.rows && result.rows.length ? result.rows : [];
@@ -85,7 +85,7 @@ class PatientService {
     try {
       const query = `SELECT COUNT(*) as patientCount FROM patients`;
       const result = await client.query(query);
-      return result.rows[0].patientCount;
+      return result.rows[0].patientcount;
     } catch (error) {
       throw new Error(
         `Error fetching patients count: ${(error as Error).message}`
